@@ -38,7 +38,7 @@ fn make_wheel(n: usize) -> (Vec<usize>, Vec<usize>) {
         let (mut diffs, mut tot) = (Vec::new(), prev_primes.into_iter().product::<usize>());
         while tot > 0 {
             let mut n = last + steps.next().unwrap();
-            while !(n % p > 0) {
+            while n % p <= 0 {
                 n += steps.next().unwrap();
             }
             let d = n - last;

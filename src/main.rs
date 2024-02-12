@@ -1,4 +1,4 @@
-use sequences::{integer::{Naturals, NonNegative, NonPositive, Negative, Fibonnaci}, common::arithmetic::Recurrent};
+use sequences::integer::{Naturals, NonNegative, NonPositive, Negative, Fibonnaci, Odd};
 
 fn main() {
    
@@ -11,8 +11,6 @@ fn main() {
     let fib = Fibonnaci::default();
     println!("{:?}", fib.take(100).collect::<Vec<_>>());
 
-    let rec = Recurrent::default();
-    println!("{:?}", rec.take(100).collect::<Vec<_>>());
 
     let nat = Naturals::default();
     println!("{:?}", nat.take(100).collect::<Vec<_>>());
@@ -25,4 +23,8 @@ fn main() {
 
     let nonpos = NonPositive::default();
     println!("{:?}", nonpos.take(100).collect::<Vec<_>>());
+
+    let test = Odd::default();
+    println!("{:?}", test.take(100).collect::<Vec<_>>());
+
 }

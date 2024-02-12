@@ -5,7 +5,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::punctuated::Punctuated;
-use syn::{self, Ident, LitInt, parse_macro_input, Token, bracketed};
+use syn::{self, Ident, LitInt, parse_macro_input, Token, bracketed, Expr};
 use syn::parse::{Parse, Error};
 
 struct Additive {
@@ -60,6 +60,12 @@ pub fn create_additive(input: TokenStream) -> TokenStream {
 
     TokenStream::from(expanded)
 }
+
+
+/*
+ * Visual break
+ */
+
 
 struct Recurrent {
     name: Ident,
@@ -142,3 +148,121 @@ pub fn create_recurrent(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+
+
+/*
+ * Visual break
+ */
+
+
+
+struct Periodic {
+    name: Ident,
+    cycle: Punctuated<LitInt, Token![,]>,
+}
+
+impl Parse for Periodic {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let content;
+        let name: Ident = input.parse()?;
+        input.parse::<Token![,]>()?;
+        let _ = bracketed!(content in input);
+        let cycle = Punctuated::<LitInt, Token![,]>::parse_terminated(&content)?;
+        Ok(Periodic { name , cycle })
+    }
+}
+
+/// Create a periodic sequence. Expected to provide the id of the sequence and
+/// the cycle that repeats.
+///
+/// create_periodic!(A000004, [0]);
+/// A whole bunch of 0's
+///
+/// create_periodic!(A000035, [0,1]);
+/// repeat 0,1,0,1,0,1,...
+///
+#[proc_macro]
+pub fn create_periodic(input: TokenStream) -> TokenStream {
+    let Periodic { name, cycle } = parse_macro_input!(input as Periodic);
+    
+
+    let expanded = quote! {
+        pub struct #name {
+            cycle: std::iter::Cycle<std::vec::IntoIter<num::BigInt>>,
+        }
+
+        impl Default for #name {
+            fn default() -> Self {
+                let orig = vec![#cycle].into_iter().map(|x| x.into()).collect::<Vec<_>>();
+                Self { cycle: orig.into_iter().cycle() }
+            }
+        }
+
+        impl Iterator for #name {
+            type Item = num::BigInt;
+            fn next(&mut self) -> Option<Self::Item> {
+                self.cycle.next()
+            }
+        }
+    };
+
+    TokenStream::from(expanded)
+}
+
+
+
+/*
+ * Visual break
+ */
+
+
+struct Equation {
+    name: Ident,
+    equation: Expr,
+}
+
+impl Parse for Equation {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let name: Ident = input.parse()?;
+        input.parse::<Token![,]>()?;
+        let equation: Expr = input.parse()?;
+        Ok(Equation { name , equation })
+    }
+}
+
+/// Create a sequence based on an equation. Expected to provide the id of the 
+/// sequence and an equation of the variable n. The sequence will end up being 
+/// [f(0), f(1), f(2), ... ]
+///
+/// create_periodic!(A005408, 2*n+1);
+/// the odd numbers
+///
+#[proc_macro]
+pub fn create_equation(input: TokenStream) -> TokenStream {
+    let Equation { name, equation } = parse_macro_input!(input as Equation);
+    
+
+    let expanded = quote! {
+        pub struct #name {
+            n: num::BigInt,
+        }
+
+        impl Default for #name {
+            fn default() -> Self {
+                Self { n: (-1).into() }
+            }
+        }
+
+        impl Iterator for #name {
+            type Item = num::BigInt;
+            fn next(&mut self) -> Option<Self::Item> {
+                self.n += 1;
+                let n = self.n.clone();
+                Some(#equation)
+            }
+        }
+        
+    };
+
+    TokenStream::from(expanded)
+}
